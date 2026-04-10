@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Start Page</title>
+    <!-- 引入 FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+            --accent-color: #00d2ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 背景图：你可以替换这里的 URL 为你喜欢的图片 */
+            background: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+            position: relative;
+        }
+
+        /* 动态遮罩层，让文字更清晰 */
+        /* body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%);
+            z-index: 0;
+        } */
+
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+            color: var(--text-color);
+        }
+
+        /* 时间显示区域 */
+        .clock-container {
+            margin-bottom: 40px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        #time {
+            font-size: 5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: -webkit-linear-gradient(#fff, #ccc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #date {
+            font-size: 1.2rem;
+            font-weight: 300;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        #greeting {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+
+        /* 搜索框区域 - 玻璃拟态 */
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 50px auto;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 5px 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .search-form:hover, .search-form:focus-within {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 210, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-form input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 1.1rem;
+            padding: 12px;
+        }
+
+        .search-form input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            font-size: 1.2rem;
+            padding: 10px;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.1);
+            color: var(--accent-color);
+        }
+
+        /* 快捷链接区域 */
+        .shortcuts {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .shortcut-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #fff;
+            width: 80px;
+            transition: transform 0.3s ease;
+        }
+
+        .shortcut-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .shortcut-item:hover .icon-box {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        .shortcut-name {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* 底部版权/天气模拟 */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        /* 简单的入场动画 */
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay:0.2s; }
+        .delay-3 { animation-delay:0.3s; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 时间与问候 -->
+        <div class="clock-container fade-in">
+            <div id="greeting">你好，陌生人</div>
+            <div id="time">00:00</div>
+            <div id="date">正在加载日期...</div>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="search-box fade-in delay-1">
+            <form class="search-form" action="https://www.google.com/search" method="GET">
+                <input type="text" name="q" placeholder="Search Google..." autocomplete="off" autofocus>
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- 快捷方式 -->
+        <div class="shortcuts fade-in delay-2">
+            <!-- Bilibili -->
+            <a href="https://www.bilibili.com" class="shortcut-item" target="_blank">
+                <div class="icon-box" style="color: #fb7299;">
+                    <i class="fab fa-bilibili"></i> <!-- 如果图标不显示，可以用 fa-tv 代替 -->
+                </div>
+                <span class="shortcut-name">Bilibili</span>
+            </a>
+            
+            <!-- YouTube -->
+            <a href="https://www.youtube.com" class="shortcut-item" target="_blank">
+                <div class="icon-box" style="color: #ff0000;">
+                    <i class="fab fa-youtube"></i>
+                </div>
+                <span class="shortcut-name">YouTube</span>
+            </a>
+
+            <!-- GitHub -->
+            <a href="https://github.com" class="shortcut-item" target="_blank">
+                <div class="icon-box" style="color: #fff;">
+                    <i class="fab fa-github"></i>
+                </div>
+                <span class="shortcut-name">GitHub</span>
+            </a>
+
+            <!-- 百度 -->
+            <a href="https://www.baidu.com" class="shortcut-item" target="_blank">
+                <div class="icon-box" style="color: #2932e1;">
+                    <i class="fab fa-baidu"></i>
+                </div>
+                <span class="shortcut-name">Baidu</span>
+            </a>
+
+            <!-- 知乎 -->
+            <a href="https://www.zhihu.com" class="shortcut-item" target="_blank">
+                <div class="icon-box" style="color: #0084ff;">
+                    <i class="fas fa-book"></i>
+                </div>
+                <span class="shortcut-name">Zhihu</span>
+            </a>
+             <!-- 淘宝 -->
+             <a href="https://www.taobao.com" class="shortcut-item" target="_blank">
+                <div class="icon-box" style="color: #ff5000;">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <span class="shortcut-name">Taobao</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        Designed for You
+    </div>
+
+    <script>
+        // 更新时间函数
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // 格式化日期：例如 2023 年 10 月 27 日 星期五
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            const dateString = now.toLocaleDateString('zh-CN', options);
+
+            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('date').textContent = dateString;
+
+            // 根据时间更改问候语
+            const hour = now.getHours();
+            let greetingText = "你好";
+            if (hour >= 5 && hour < 12) greetingText = "早上好";
+            else if (hour >= 12 && hour < 18) greetingText = "下午好";
+            else if (hour >= 18 && hour < 23) greetingText = "晚上好";
+            else greetingText = "夜深了";
+            
+            document.getElementById('greeting').textContent = `${greetingText}，享受你的网络时光`;
+        }
+
+        // 初始化并每秒更新
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
