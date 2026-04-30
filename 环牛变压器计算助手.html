@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>环牛变压器计算助手 Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .input-focus { outline: none; border-color: #3b82f6; ring: 2px; ring-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen py-10 px-4 font-sans text-slate-900">
+
+<div id="app" v-cloak class="max-w-6xl mx-auto">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-black text-slate-800 tracking-tight">环牛变压器计算助手</h1>
+        <p class="text-slate-500 mt-2 font-medium">手动线径模式：支持实时核算电流密度安全性</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- 输入侧 -->
+        <div class="lg:col-span-7 space-y-6">
+            <!-- 磁芯设定 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 flex items-center text-slate-700">
+                    <span class="w-1.5 h-5 bg-blue-600 rounded mr-2"></span> 磁芯几何参数
+                </h2>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">外径 (mm)</label>
+                        <input v-model.number="core.outerD" type="number" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">内径 (mm)</label>
+                        <input v-model.number="core.innerD" type="number" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">高度 (mm)</label>
+                        <input v-model.number="core.height" type="number" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-xs font-bold text-slate-400 mb-1">工作磁感强度 B (Tesla)</label>
+                    <input v-model.number="core.B" type="number" step="0.01" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition">
+                </div>
+            </div>
+
+            <!-- 绕组设定 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-700">绕组规格设定</h2>
+                    <button @click="addSecondary" class="text-sm font-bold text-blue-600 hover:text-blue-700">+ 增加次级</button>
+                </div>
+
+                <!-- 初级 -->
+                <div class="p-4 rounded-xl border border-blue-100 bg-blue-50/30 mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-bold text-blue-800">初级绕组 (L0)</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">额定电压 (V)</label>
+                            <input v-model.number="primary.voltage" type="number" class="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">线径 Φ (mm)</label>
+                            <input v-model.number="primary.wireSize" type="number" step="0.01" class="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 次级动态列表 -->
+                <div class="space-y-4">
+                    <div v-for="(sec, index) in secondaries" :key="index" class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 relative group">
+                        <button @click="removeSecondary(index)" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+                        </button>
+                        <span class="text-xs font-bold text-slate-500 block mb-3">次级绕组 #{{index + 1}}</span>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">电压 (V)</label>
+                                <input v-model.number="sec.voltage" type="number" class="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">电流 (A)</label>
+                                <input v-model.number="sec.current" type="number" step="0.1" class="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">线径 Φ (mm)</label>
+                                <input v-model.number="sec.wireSize" type="number" step="0.01" class="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="calculate" class="w-full mt-8 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition shadow-xl">
+                    执行综合计算
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果侧 -->
+        <div class="lg:col-span-5">
+            <div class="sticky top-10 space-y-6">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-900 p-6 text-white text-center">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">计算报表</p>
+                        <h3 class="text-4xl font-mono mt-1" v-if="res">{{ res.totalP }}<span class="text-lg font-normal ml-1">W</span></h3>
+                        <p class="text-slate-500 text-sm mt-1">总输出功率</p>
+                    </div>
+
+                    <div v-if="res" class="p-6 space-y-6">
+                        <!-- 核心参数 -->
+                        <div class="flex justify-between text-sm border-b border-slate-100 pb-3">
+                            <span class="text-slate-500">每伏匝数 (N0)</span>
+                            <span class="font-bold font-mono">{{ res.n0 }} 匝/V</span>
+                        </div>
+
+                        <!-- 绕组结果 -->
+                        <div class="space-y-4">
+                            <!-- 初级结果 -->
+                            <div class="p-4 rounded-xl bg-blue-50 border border-blue-100 relative">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-blue-900 font-bold">初级 L0</span>
+                                    <span class="text-xs bg-white px-2 py-0.5 rounded-full border border-blue-200 text-blue-600">输入绕组</span>
+                                </div>
+                                <p class="text-2xl font-mono font-black text-slate-800">{{ res.pTurns }} <span class="text-sm font-normal">匝</span></p>
+                                <div class="flex justify-between items-end mt-2">
+                                    <span class="text-xs text-slate-400 italic">线径 Φ {{ primary.wireSize }}mm</span>
+                                    <div class="text-right">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase">实际电流密度 J</p>
+                                        <p :class="['font-mono font-bold', res.pJ > 3.5 ? 'text-red-500' : 'text-green-600']">{{ res.pJ }} <small>A/mm²</small></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 次级结果 -->
+                            <div v-for="(s, i) in res.sDetails" :key="i" class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-slate-700 font-bold">次级 #{{ i + 1 }}</span>
+                                    <span class="text-xs text-slate-400">{{ secondaries[i].voltage }}V / {{ secondaries[i].current }}A</span>
+                                </div>
+                                <p class="text-2xl font-mono font-black text-slate-800">{{ s.turns }} <span class="text-sm font-normal">匝</span></p>
+                                <div class="flex justify-between items-end mt-2">
+                                    <span class="text-xs text-slate-400 italic">线径 Φ {{ secondaries[i].wireSize }}mm</span>
+                                    <div class="text-right">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase">实际电流密度 J</p>
+                                        <p :class="['font-mono font-bold', s.jReal > 3.5 ? 'text-red-500' : 'text-green-600']">{{ s.jReal }} <small>A/mm²</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 警告说明 -->
+                        <div v-if="hasDanger" class="p-3 bg-red-50 border-l-4 border-red-500 text-[11px] text-red-600 leading-relaxed">
+                            ⚠️ <strong>警告：</strong> 部分绕组线径偏细（J > 3.5），在高负载下可能会产生显著温升。建议增大对应线径。
+                        </div>
+                    </div>
+
+                    <div v-else class="p-20 text-center text-slate-300">
+                        <p class="text-sm">点击“执行综合计算”生成报表</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed } = Vue;
+
+createApp({
+    setup() {
+        const core = reactive({
+            outerD: 105,
+            innerD: 60,
+            height: 45,
+            B: 1.45
+        });
+
+        const primary = reactive({
+            voltage: 220,
+            wireSize: 0.35
+        });
+
+        const secondaries = ref([
+            { voltage: 24, current: 5, wireSize: 1.25 }
+        ]);
+
+        const res = ref(null);
+
+        const addSecondary = () => {
+            secondaries.value.push({ voltage: 12, current: 1, wireSize: 0.5 });
+        };
+
+        const removeSecondary = (index) => {
+            secondaries.value.splice(index, 1);
+        };
+
+        const calculate = () => {
+            // 1. 磁芯截面积 (cm²)
+            const area = ((core.outerD - core.innerD) / 2 / 10) * (core.height / 10) * 0.95;
+            
+            // 2. 每伏匝数
+            const n0 = 45 / (core.B * area);
+
+            // 3. 计算次级
+            let totalP = 0;
+            const sDetails = secondaries.value.map(s => {
+                totalP += s.voltage * s.current;
+                
+                // 根据输入电压算匝数 (加5%损耗补偿)
+                const turns = Math.ceil(s.voltage * n0 * 1.05);
+                
+                // 根据输入线径算实际电流密度 J = I / Area_wire
+                // Area_wire = PI * (d/2)^2
+                const wireArea = Math.PI * Math.pow(s.wireSize / 2, 2);
+                const jReal = (s.current / wireArea).toFixed(2);
+
+                return { turns, jReal };
+            });
+
+            // 4. 计算初级
+            const pI = totalP / (primary.voltage * 0.9); // 0.9 效率
+            const pWireArea = Math.PI * Math.pow(primary.wireSize / 2, 2);
+            const pJ = (pI / pWireArea).toFixed(2);
+
+            res.value = {
+                totalP: totalP.toFixed(1),
+                n0: n0.toFixed(2),
+                pTurns: Math.ceil(primary.voltage * n0),
+                pJ,
+                sDetails,
+                area: area.toFixed(2)
+            };
+        };
+
+        const hasDanger = computed(() => {
+            if (!res.value) return false;
+            if (parseFloat(res.value.pJ) > 3.5) return true;
+            return res.value.sDetails.some(s => parseFloat(s.jReal) > 3.5);
+        });
+
+        return { core, primary, secondaries, res, addSecondary, removeSecondary, calculate, hasDanger };
+    }
+}).mount('#app');
+</script>
+
+</body>
+</html>
